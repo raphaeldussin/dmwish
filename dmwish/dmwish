@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+
+import pandas as pd
+import subprocess as sp
+import argparse
+import os
+from dmwish.lib import _add_to_wishlist, _read_wishlist, _clean_list
+from dmwish.lib import _list_files, _create_database, _retrieve_files
+
+user = os.environ.get("HOME")
+wishfile = f"{user}/.dmget_wishlist"
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="dmget wish list")
+    parser.add_argument(
+        "-a",
+        "--add",
+        type=str,
+        nargs="+",
+        required=False,
+        help="files to add to wishlist",
+    )
+    parser.add_argument(
+        "-l",
+        "--list",
+        action="store_true",
+        required=False,
+        help="list files in wishlist",
+    )
+    parser.add_argument(
+        "-g", "--get", action="store_true", required=False, help="get all files",
+    )
+    parser.add_argument(
+        "-d",
+        "--delete",
+        action="store_true",
+        required=False,
+        help="clean all files in wishlist",
+    )
+
+    args = vars(parser.parse_args())
+
+    if args["add"] is not None:
+        if not os.path.exists(wishfile):
+            err = sp.check_call(f"touch {wishfile}", shell=True)
+        _add_to_wishlist(args["add"])
+
+    if args["get"]:
+        wishfiles = _read_wishlist()
+        df = _create_database(wishfiles)
+        _retrieve_files(df)
+        _clean_list()
+
+    if args["list"]:
+        if not os.path.exists(wishfile):
+            print("nothing in wishlist")
+        else:
+            wishfiles = _read_wishlist()
+            df = _create_database(wishfiles)
+            _list_files(df)
+
+    if args["delete"]:
+        _clean_list()
